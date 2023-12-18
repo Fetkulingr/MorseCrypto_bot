@@ -1,17 +1,17 @@
 '''
-This module make
+This program make
 
 Athor: Fetkulin Grigory, Fetkulin.G.R@yandex.ru
 Starting 2022/04/26
 Ending 2022/05/06
 
 '''
-# Установка необходимых библиотек
+# Installing the necessary libraries
 import telebot
 from telebot import types
 from settings import TG_TOKEN
 from telebot import types
-# Словарь соответствий букв морзе-кодам
+# Dictionary of Morse code letter correspondences
 morse_code = {'а': '.-', 'б': '-...', 'в': '.--', 'г': '--.',
               'д': '-..', 'е': '.', 'ж': '...-', 'з': '--..',
               'и': '..', 'й': '.---', 'к': '-.-', 'л': '.-..', 'м': '--',
@@ -20,76 +20,76 @@ morse_code = {'а': '.-', 'б': '-...', 'в': '.--', 'г': '--.',
               'ч': '---.', 'ш': '----', 'щ': '--.-', 'ъ': '.--.-.', 'ы': '-.--',
               'ь': '-..-', 'э': '..-..', 'ю': '..--', 'я': '.-.-'}
 
-# Словарь соответствий морзе-кодов буквам
+# Dictionary of Morse code letter correspondences
 text_to_morse_code = {v: k for k, v in morse_code.items()}
 
-# Создаем экземпляр бота
+# Creating an instance of the bot
 bot = telebot.TeleBot(TG_TOKEN)
 
-# Обработчик команды /start
+# Handler of the /start command
 @bot.message_handler(commands=['start'])
 def start_command(message):
-    # Создаем клавиатуру с двумя кнопками для выбора действия
+    # Creating a keyboard with two buttons to select an action
     keyboard = types.InlineKeyboardMarkup()
     encrypt_button = types.InlineKeyboardButton(text='Зашифровать', callback_data='encrypt')
     decrypt_button = types.InlineKeyboardButton(text='Расшифровать', callback_data='decrypt')
     keyboard.add(encrypt_button, decrypt_button)
-    # Отправляем сообщение с клавиатурой
+    # Sending a message with the keyboard
     bot.send_message(message.chat.id,
                      "Здравствуйте, {0.first_name}!\nМеня зовут<b> {1.first_name}</b>, Я бот, который может зашифровать и расшифровать текст в морзе-коде. Нажмите на одну из кнопок ниже, чтобы выбрать действие.".format(
                          message.from_user, bot.get_me()), parse_mode='html', reply_markup=keyboard)
 
 
-# Обработчик нажатия на кнопку
+# Button click handler
 @bot.callback_query_handler(func=lambda call: True)
 def on_callback_query(call):
     if call.data == 'encrypt':  # Если была нажата кнопка "Зашифровать"
         bot.answer_callback_query(callback_query_id=call.id, text='Вы выбрали зашифровать')
-        # Запросить у пользователя текст для шифрования
+        # Request a text from the user for encryption
         bot.send_message(chat_id=call.message.chat.id, text='Введите сообщение для шифрования:')
-        # Зарегистрировать следующую функцию для обработки ответа пользователя
+        # Register the following function to process the user's response
         bot.register_next_step_handler(call.message, encrypt_message)
-    elif call.data == 'decrypt':  # Если была нажата кнопка "Расшифровать"
+    elif call.data == 'decrypt':  # If the "Decrypt" button was pressed
         bot.answer_callback_query(callback_query_id=call.id, text='Вы выбрали расшифровать')
-        # Запросить у пользователя текст для расшифровки
+        # Request a decryption text from the user
         bot.send_message(chat_id=call.message.chat.id, text='Введите сообщение для расшифровки:')
-        # Зарегистрировать следующую функцию для обработки ответа пользователя
+        # Register the following function to process the user's response
         bot.register_next_step_handler(call.message, decrypt_message)
 
 
-# Функция для зашифровки сообщения
+# Function for encrypting the message
 def encrypt_message(message):
     morse = ''
-    text = message.text.lower()  # Привести текст к нижнему регистру
-    # Пройти по каждой букве в тексте и добавить соответствующий морзе-код в строку
+    text = message.text.lower()  # Reduce the text to lowercase
+   # Go through each letter in the text and add the corresponding morse code to the string
     for letter in text:
         if letter in morse_code:
             morse += morse_code[letter] + ' '
-    # Если получилось зашифровать сообщение, отправить его пользователю
+    # If you manage to encrypt the message, send it to the user
     if morse:
         bot.send_message(chat_id=message.chat.id, text=f'Ваше зашифрованное сообщение:\n{morse}')
-    # Иначе сообщить пользователю, что сообщение не может быть зашифровано
+   # Otherwise inform the user that the message cannot be encrypted
     else:
         bot.send_message(chat_id=message.chat.id, text='Сообщение не может быть зашифровано.')
 
 
-# Функция для расшифровки сообщения
+# Function to decrypt the message
 def decrypt_message(message):
     text = ''
-    morse = message.text.split()  # Разбить текст на отдельные морзе-коды
-    # Пройти по каждому морзе-коду и добавить соответствующую букву в строку
+    morse = message.text.split()  # Split the text into separate morse codes
+    # Go through each morse code and add the corresponding letter to the string
     for symbol in morse:
         if symbol in text_to_morse_code:
             text += text_to_morse_code[symbol]
         else:
-            text += ' '  # Если для текущего морзе-кода нет соответствия, добавить пробел
-    # Если получилось расшифровать сообщение, отправить его пользователю
+            text += ' '  # If there is no match for the current Morse code, add a space
+    # If you manage to decrypt the message, send it to the user
     if text:
         bot.send_message(chat_id=message.chat.id, text=f'Ваше расшифрованное сообщение:\n{text}')
-    # Иначе сообщить пользователю, что сообщение не может быть расшифровано
+    # Otherwise inform the user that the message cannot be decrypted
     else:
         bot.send_message(chat_id=message.chat.id, text='Сообщение не может быть расшифровано.')
 
 
-# Запускаем бота
+# Launching the bot
 bot.polling()
